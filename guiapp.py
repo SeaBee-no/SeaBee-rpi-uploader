@@ -1,13 +1,172 @@
 import tkinter as tk
-from tkinter import ttk
 import subprocess
 import os
 import glob
-import time
-from tkinter import scrolledtext
 import threading
 import queue
 import re
+from tkinter import simpledialog, messagebox
+
+class WifiManagementWindow(tk.Toplevel):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.title('WiFi Management')
+        
+        # Set fullscreen
+        self.attributes('-fullscreen', True)
+        
+        # Hide the mouse cursor over the window
+        self.config(cursor="none")
+        
+        # Add a button to close the window
+        self.close_button = tk.Button(self, text="Close Window", command=self.close_window)
+        self.close_button.pack()
+
+        # Create widgets (listbox, buttons, labels, etc.)
+        self.create_widgets()
+
+    def close_window(self):
+        # Close the window
+        self.destroy()
+
+    def create_widgets(self):
+        # Button to scan for WiFi networks
+        self.scan_button = tk.Button(self, text="Scan for Networks", command=self.scan_wifi_networks)
+        self.scan_button.pack()
+
+        # Listbox to display the list of networks
+        self.networks_listbox = tk.Listbox(self)
+        self.networks_listbox.pack()
+
+        # Button to connect to the selected network
+        self.connect_button = tk.Button(self, text="Connect to Selected Network", command=self.connect_to_selected_network)
+        self.connect_button.pack()
+
+        # Label to show connection status
+        self.status_label = tk.Label(self, text="Not Connected")
+        self.status_label.pack()
+
+    def scan_wifi_networks(self):
+        # Clear the listbox
+        self.networks_listbox.delete(0, tk.END)
+        
+        # Command to scan for WiFi networks
+        command = ['nmcli', '-f', 'SSID', 'device', 'wifi', 'list']
+        try:
+            # Run the command
+            scan_result = subprocess.run(command, stdout=subprocess.PIPE, text=True)
+            # Decode and split the output to get the list of networks
+            networks = scan_result.stdout.strip().split('\n')
+            # Skip the first line (it's the header)
+            for network in networks[1:]:
+                network_name = network.strip()
+                if network_name:  # Check if the network name is not empty
+                    self.networks_listbox.insert(tk.END, network_name)
+        except Exception as e:
+            print(f"An error occurred while scanning for WiFi networks: {e}")
+
+    def connect_to_selected_network(self):
+        # Get the selected network
+        selection = self.networks_listbox.curselection()
+        if selection:
+            selected_network = self.networks_listbox.get(selection)
+            
+            # Prompt for the password using the custom dialog
+            password = get_password(self, title="Password", message=f"Enter password for {selected_network}")
+            
+            if password is not None and password != "":
+                # Attempt to connect to the network using the provided password
+                try:
+                    # Command to connect to the WiFi network with a password
+                    connect_command = ['nmcli', 'device', 'wifi', 'connect', selected_network, 'password', password]
+                    connect_result = subprocess.run(connect_command, stdout=subprocess.PIPE, text=True, stderr=subprocess.PIPE)
+                    
+                    if connect_result.returncode == 0:
+                        # Successfully connected
+                        self.status_label.config(text=f"Connected to {selected_network}")
+                    else:
+                        # Failed to connect
+                        messagebox.showerror("Connection Failed", f"Failed to connect to {selected_network}\n{connect_result.stderr}")
+                except Exception as e:
+                    messagebox.showerror("Error", f"An error occurred while connecting to the WiFi network: {e}")
+            elif password == "":
+                messagebox.showwarning("No Password", "No password was entered. Please try again.")
+        else:
+            messagebox.showerror("Selection Error", "Please select a network from the list.")
+
+
+class OnScreenKeyboard(tk.Toplevel):
+    def __init__(self, parent, entry_widget):
+        super().__init__(parent)
+        self.entry_widget = entry_widget  # The text entry widget where the keys will be sent
+        self.title('On-Screen Keyboard')
+        self.create_keyboard()
+
+    def create_keyboard(self):
+        # Define keyboard layout
+        rows = [
+            ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', 'Backspace'],
+            ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
+            ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l'],
+            ['z', 'x', 'c', 'v', 'b', 'n', 'm', '-', '_'],
+            ['Space']
+        ]
+
+        for r_index, row in enumerate(rows):
+            for k_index, key in enumerate(row):
+                button = tk.Button(self, text=key, command=lambda key=key: self.key_press(key))
+                button.grid(row=r_index, column=k_index, sticky="nsew", padx=5, pady=5)
+                
+        # Make the buttons expand
+        for r_index in range(len(rows)):
+            self.grid_rowconfigure(r_index, weight=1)
+        for c_index in range(len(rows[0])):
+            self.grid_columnconfigure(c_index, weight=1)
+
+    def key_press(self, key):
+        if key == 'Backspace':
+            current_text = self.entry_widget.get()
+            # remove the last character
+            new_text = current_text[:-1]
+            self.entry_widget.delete(0, tk.END)
+            self.entry_widget.insert(0, new_text)
+        elif key == 'Space':
+            self.entry_widget.insert(tk.END, ' ')
+        else:
+            self.entry_widget.insert(tk.END, key)
+
+class PasswordDialog(tk.Toplevel):
+    def __init__(self, parent, title="Enter password", message="Enter password for the network"):
+        super().__init__(parent)
+        self.title(title)
+        self.result = None
+
+        # Message label
+        tk.Label(self, text=message).pack(pady=10)
+
+        # Password entry
+        self.password_entry = tk.Entry(self, show="*")
+        self.password_entry.pack(pady=10)
+        self.password_entry.focus_set()  # Focus on the entry widget
+
+        # Submit button
+        submit_button = tk.Button(self, text="Submit", command=self.on_submit)
+        submit_button.pack(pady=10)
+
+        # Open on-screen keyboard when the entry widget is focused
+        self.password_entry.bind("<FocusIn>", self.open_on_screen_keyboard)
+
+    def open_on_screen_keyboard(self, event):
+        OnScreenKeyboard(self, self.password_entry)
+
+    def on_submit(self):
+        self.result = self.password_entry.get()
+        self.destroy()
+
+def get_password(parent, title="Enter password", message="Enter password for the network"):
+    dialog = PasswordDialog(parent, title, message)
+    parent.wait_window(dialog)
+    return dialog.result
 
 # Global variables to store paths
 sdcard_path = None
@@ -231,7 +390,9 @@ def update_output():
     # Schedule the next call
     root.after(100, update_output)
 
-# ... (rest of the original code remains the same)
+# Function to open the WiFi management window
+def open_wifi_management():
+    WifiManagementWindow(root)
 
 
 
@@ -281,6 +442,10 @@ sd_card_path_label.place(x=start_x, y=start_y + box_height - 30, width=box_width
 # Label to display the Hard Drive path
 harddrive_path_label = tk.Label(root, fg="white", bg="grey", font=('Helvetica', 7), anchor="center")
 harddrive_path_label.place(x=start_x + box_width + space_between_boxes, y=start_y + box_height - 30, width=box_width, height=20)
+
+# Button for WiFi management
+wifi_button = tk.Button(root, text="Manage WiFi", command=open_wifi_management, bg="lightgrey", fg="black")
+wifi_button.place(x=start_x + 2 * box_width + 2 * space_between_boxes, y=start_y, width=box_width, height=box_height)
 
 # Button for performing an action when both SD card and hard drive are ready
 action_button = tk.Button(root, text="Waiting...", command=perform_action, state=tk.DISABLED)#, bg="lightgrey", fg="white")
