@@ -1,0 +1,5 @@
+[Desktop Entry]
+Type=Application
+Name=SeaBeeUploader
+Exec=python "/home/pi/SeaBee-rpi-uploader/guiapp.py"
+Type=Application

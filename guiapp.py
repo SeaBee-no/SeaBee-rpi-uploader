@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import tkinter as tk
 import subprocess
 import os
@@ -10,6 +12,7 @@ import re
 sdcard_path = None
 usbdrive_path = None
 is_transfer_active = False
+miniobucket = 'seabirds'
 
 def check_storage_devices():
     try:
@@ -102,6 +105,7 @@ def update_harddrive_status(status):
         harddrive_path_label.config(bg="grey", text="")  # Clear path text
 
 # Function to create a rounded rectangle on the canvas
+# this function currently dont work as intended, but is still in use
 def create_rounded_rect(canvas, x1, y1, x2, y2, radius=25, **kwargs):
     points = [
         x1+radius, y1,
@@ -130,7 +134,7 @@ def perform_action():
     execute_command_sequence()
 
 def execute_command_sequence():
-    global sdcard_path, usbdrive_path
+    global sdcard_path, usbdrive_path, miniobucket
     # Ensure paths are set
     if not sdcard_path or not usbdrive_path:
         print("SD card or USB drive path not set.")
@@ -140,7 +144,7 @@ def execute_command_sequence():
     commands = [
         f"rclone copy {sdcard_path}/DCIM {usbdrive_path} --progress",
         f"umount {sdcard_path}",  # Uncomment and modify if needed
-        f"rclone copy {usbdrive_path} minio:seabirds/fielduploads --progress"
+        f"rclone copy {usbdrive_path} minio:{miniobucket}/fielduploads --progress"
     ]
 
     # Start the first command. The rest will be triggered sequentially after each command completes
