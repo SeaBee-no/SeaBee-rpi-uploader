@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import tkinter as tk
+from tkinter import PhotoImage
 import subprocess
 import os
 import glob
@@ -72,9 +73,9 @@ def check_storage_devices():
             
         # Enable the action button if both SD card and hard drive are ready/connected
         if sd_card_ready and harddrive_connected:
-            action_button.config(state=tk.NORMAL, text="Copy and Upload Data")
+            action_button.config(state=tk.NORMAL, text="Do Both")
         else:
-            action_button.config(state=tk.DISABLED, text="Waiting...")
+            action_button.config(state=tk.DISABLED, text="Do Both")
     except Exception as e:
         print("Error:", e)
 
@@ -103,6 +104,25 @@ def update_harddrive_status(status):
         canvas.itemconfig(harddrive_box, fill="grey")  # Change color of the canvas rectangle
         harddrive_label.config(bg="grey", text="Hard Drive\nNot connected")
         harddrive_path_label.config(bg="grey", text="")  # Clear path text
+
+def check_internet_connectivity():
+    try:
+        response = subprocess.run(['ping', '-c', '1', '8.8.8.8'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if response.returncode == 0:
+            update_internet_status("Connected")
+        else:
+            update_internet_status("Disconnected")
+    except Exception as e:
+        print("Failed to check internet connectivity:", e)
+        update_internet_status("Disconnected")
+
+    root.after(10000, check_internet_connectivity)  # Check every 10 seconds
+
+def update_internet_status(status):
+    if status == "Connected":
+        wifi_status_label.config(image=wifi_connected_icon)
+    else:
+        wifi_status_label.config(image=wifi_disconnected_icon)
 
 # Function to create a rounded rectangle on the canvas
 # this function currently dont work as intended, but is still in use
@@ -242,6 +262,39 @@ def toggle_fullscreen():
     else:
         toggle_button.config(text="Enter")
 
+def copy_to_hard_drive():
+    global sdcard_path, usbdrive_path
+    if not sdcard_path or not usbdrive_path:
+        print("SD card or USB drive path not set.")
+        return
+    command = f"rclone copy {sdcard_path}/DCIM {usbdrive_path} --progress"
+    process_thread = threading.Thread(target=run_command, args=([command], 0))
+    process_thread.start()
+
+def upload_to_cloud():
+    global usbdrive_path, miniobucket
+    if not usbdrive_path:
+        print("USB drive path not set.")
+        return
+    command = f"rclone copy {usbdrive_path} minio:{miniobucket}/fielduploads --progress"
+    process_thread = threading.Thread(target=run_command, args=([command], 0))
+    process_thread.start()
+
+def update_gui_status():
+    global sdcard_path, usbdrive_path
+    if sdcard_path and usbdrive_path:
+        copy_button.config(state=tk.NORMAL)
+    else:
+        copy_button.config(state=tk.DISABLED)
+    
+    if usbdrive_path:
+        upload_button.config(state=tk.NORMAL)
+    else:
+        upload_button.config(state=tk.DISABLED)
+
+    # Update statuses regularly
+    root.after(5000, update_gui_status)
+
 # Create the main window
 root = tk.Tk()
 is_fullscreen = True
@@ -262,7 +315,8 @@ root.update()  # Force update of root dimensions
 # Calculate positions for centering
 box_width = 150
 box_height = 120
-action_button_width = 170
+action_button_width = 140
+both_button_width = 100
 action_button_height = 60
 space_between_boxes = 50
 total_width = 2 * box_width + space_between_boxes
@@ -294,18 +348,36 @@ harddrive_path_label.place(x=start_x + box_width + space_between_boxes, y=start_
 toggle_button = tk.Button(root, text="Exit", command=toggle_fullscreen, bg="#eee")
 toggle_button.place(x=10, y=10, width=40, height=40)
 
-# Button for performing an action when both SD card and hard drive are ready
-action_button = tk.Button(root, text="Waiting...", command=perform_action, state=tk.DISABLED)#, bg="lightgrey", fg="white")
-action_button.place(x=window_width / 2 - action_button_width / 2, y=start_y + box_height + 10, width=action_button_width, height=action_button_height)
-
 # Using a Label for output
 output_label = tk.Label(root, text="", fg="black", bg="white", font=('Helvetica', 10))
 output_label.place(x=5, y=start_y + box_height + 80, width=window_width - 10, height=100)
+
+# Button for performing an action when both SD card and hard drive are ready
+action_button = tk.Button(root, text="Do Both", command=perform_action, state=tk.DISABLED)#, bg="lightgrey", fg="white")
+action_button.place(x=window_width / 2 - both_button_width / 2, y=start_y + box_height + 10, width=both_button_width, height=action_button_height)
+
+# Button for copying data from SD card to hard drive
+copy_button = tk.Button(root, text="Copy to Hard Drive", command=copy_to_hard_drive, state=tk.DISABLED)
+copy_button.place(x=window_width / 2 - action_button_width / 2 - 130, y=start_y + box_height + 10, width=action_button_width, height=action_button_height)
+
+# Button for uploading data from hard drive to MinIO
+upload_button = tk.Button(root, text="Upload to Cloud", command=upload_to_cloud, state=tk.DISABLED)
+upload_button.place(x=window_width / 2 - action_button_width / 2 + 130, y=start_y + box_height + 10, width=action_button_width, height=action_button_height)
+
+# Load WiFi icons
+wifi_connected_icon = PhotoImage(file="/home/pi/SeaBee-rpi-uploader/wifi_connected.png")
+wifi_disconnected_icon = PhotoImage(file="/home/pi/SeaBee-rpi-uploader/wifi_disconnected.png")
+
+# Create a Label for the WiFi status
+wifi_status_label = tk.Label(root, image=wifi_disconnected_icon)
+wifi_status_label.place(x=440, y=10, width=30, height=30)  # Adjust size and position as needed
 
 # Start the periodic update for SD card and hard drive
 check_storage_devices()
 output_queue = queue.Queue()
 update_output()  # Start the periodic update loop
+check_internet_connectivity()  # Start checking internet connectivity status
+update_gui_status()
 
 
 # Start the GUI event loop
