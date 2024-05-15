@@ -1,7 +1,7 @@
 # SeaBee Raspberry Pi Uploader - README
 
 ## Overview
-The SeaBee Raspberry Pi Uploader is a Python-based graphical application designed to facilitate the transfer of data from SD cards to USB drives and eventually to a MinIO server. It's tailored for use in Raspberry Pi systems, with a user-friendly interface that allows easy monitoring and control of the transfer process.
+The SeaBee Raspberry Pi Uploader is a Python-based graphical application designed to facilitate the transfer of data from SD cards to USB drives and eventually to a MinIO server. It's tailored for use in Raspberry Pi systems, with a user-friendly interface that allows easy monitoring and control of the transfer process. It's designed to be used with a 3.5 inch touch display.
 
 ## Features
 - **Device Monitoring**: Automatically detects and displays the connection status of SD cards and USB drives.
@@ -82,6 +82,10 @@ File Manager -> edit > preferences > volume management > Uncheck "Show available
     cp /home/pi/SeaBee-rpi-uploader/SeaBeeUploader.desktop /home/pi/.config/autostart/SeaBeeUploader.desktop
     ```
 
+## Default Config
+There is a default config file in the folder. This can be edited to change what the script uploads to MinIO. One can here for instance change the creator_name.
+
+
 ## Start Automatic Pulling from GitHub (Optional)
 
 To set up your system to automatically pull updates from GitHub, follow these steps:
@@ -101,7 +105,7 @@ To set up your system to automatically pull updates from GitHub, follow these st
 3. **Add the following line to the crontab file:**
 
     ```sh
-    @reboot /home/pi/SeaBee-rpi-uploader/update_repo.sh
+    /15 * * * * /home/pi/SeaBee-rpi-uploader/update_repo.sh
     ```
 
 This will ensure that the script runs automatically every time the system reboots, keeping your repository up-to-date.

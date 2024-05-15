@@ -16,6 +16,11 @@ usbdrive_path = None
 internet_connected = False
 is_transfer_active = False
 miniobucket = 'seabirds'
+default_config_path = "/home/pi/SeaBee-rpi-uploader/default_config.yaml"
+
+# Load the default configuration
+with open(default_config_path, 'r', encoding='utf-8') as file:
+    default_config = yaml.safe_load(file)
 
 def check_storage_devices():
     try:
@@ -202,21 +207,14 @@ def execute_command_sequence(action):
 
 
 def create_config_file(folder_path, nfiles):
-    config_data = {
-        'grouping': '',
-        'area': '',
-        'datetime': '',
+    config_data = default_config.copy()  # Start with the default configuration
+    config_data.update({
         'nfiles': nfiles,
-        'organisation': 'NINA',
-        'creator_name': '',
-        'theme': 'Seabirds',
-        'mosaic': True,
-        'classify': True,
-        'publish': True
-    }
+        'datetime': '',  # Always set datetime to an empty string
+    })
     config_path = os.path.join(folder_path, 'config.seabee.yaml')
-    with open(config_path, 'w') as config_file:
-        yaml.dump(config_data, config_file, default_flow_style=False)
+    with open(config_path, 'w', encoding='utf-8') as config_file:
+        yaml.dump(config_data, config_file, default_flow_style=False, allow_unicode=True)
 
 
 def run_command(commands, index):
