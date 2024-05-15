@@ -13,12 +13,14 @@ import yaml
 # Global variables to store paths
 sdcard_path = None
 usbdrive_path = None
+internet_connected = False
 is_transfer_active = False
 miniobucket = 'seabirds'
 
 def check_storage_devices():
     try:
         global is_transfer_active
+        global internet_connected
         if is_transfer_active:
             return
         global sdcard_path, usbdrive_path
@@ -79,16 +81,20 @@ def check_storage_devices():
             update_harddrive_status("CONNECTED", hd_mission_count, hd_manual_count)
         else:
             update_harddrive_status("Not connected")
-            
-        if sd_card_ready and harddrive_connected:
-            configure_buttons('normal', [1,1,1])
-        elif sd_card_ready and not harddrive_connected:
-            configure_buttons('disable', [1,1,1])
-        elif not sd_card_ready and harddrive_connected:
-            configure_buttons('disable', [1,1,1])
-            configure_buttons('normal', [0,0,1])
+        
+        if internet_connected:
+            uploadpossible = 1
         else:
-            configure_buttons('disable', [1,1,1])
+            uploadpossible = 0
+
+        if sd_card_ready and harddrive_connected:
+            configure_buttons([1,1,uploadpossible])
+        elif sd_card_ready and not harddrive_connected:
+            configure_buttons([0,0,0])
+        elif not sd_card_ready and harddrive_connected:
+            configure_buttons([0,0,uploadpossible])
+        else:
+            configure_buttons([0,0,0])
     except Exception as e:
         print("Error:", e)
 
@@ -120,15 +126,19 @@ def update_harddrive_status(status, missions_count=0, manual_count=0):
 
 
 def check_internet_connectivity():
+    global internet_connected
     try:
         response = subprocess.run(['ping', '-c', '1', '8.8.8.8'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if response.returncode == 0:
             update_internet_status("Connected")
+            internet_connected = True
         else:
             update_internet_status("Disconnected")
+            internet_connected = False
     except Exception as e:
         print("Failed to check internet connectivity:", e)
         update_internet_status("Disconnected")
+        internet_connected = False
 
     root.after(10000, check_internet_connectivity)
 
@@ -158,7 +168,7 @@ def create_rounded_rect(canvas, x1, y1, x2, y2, radius=25, **kwargs):
 def perform_action(action):
     global is_transfer_active
 
-    configure_buttons('disable')
+    configure_buttons([0,0,0])
     is_transfer_active = True
 
     execute_command_sequence(action)
@@ -266,7 +276,7 @@ def update_output():
         if latest_output is None:
             pass
         elif latest_output == "ALL_COMMANDS_FINISHED":
-            configure_buttons('normal')
+            configure_buttons([1,1,1])
             is_transfer_active = False
             output_label.config(text="All commands completed")
             check_storage_devices()
@@ -279,23 +289,19 @@ def update_output():
     root.after(100, update_output)
 
 
-def configure_buttons(newstate, buttons=[1,1,1]):
-    if newstate == 'normal':
-        if buttons[0]==1:
-            copy_button.config(state=tk.NORMAL)
-        if buttons[1]==1:
-            action_button.config(state=tk.NORMAL)
-        if buttons[2]==1:
-            upload_button.config(state=tk.NORMAL)
-        unmount_button.config(state=tk.NORMAL)
+def configure_buttons(newstate=[1,1,1]):
+    if newstate[0] == 1:
+        copy_button.config(state=tk.NORMAL)
     else:
-        if buttons[0]==1:
-            copy_button.config(state=tk.DISABLED)
-        if buttons[1]==1:
-            action_button.config(state=tk.DISABLED)
-        if buttons[2]==1:
-            upload_button.config(state=tk.DISABLED)
-        unmount_button.config(state=tk.DISABLED)
+        copy_button.config(state=tk.DISABLED)
+    if newstate[1] == 1:
+        action_button.config(state=tk.NORMAL)
+    else:
+        action_button.config(state=tk.DISABLED)
+    if newstate[2] == 1:
+        upload_button.config(state=tk.NORMAL)
+    else:
+        upload_button.config(state=tk.DISABLED)
 
 
 def toggle_fullscreen():
@@ -382,7 +388,7 @@ wifi_status_label = tk.Label(root, image=wifi_disconnected_icon)
 wifi_status_label.place(x=440, y=10, width=30, height=30)
 
 unmount_icon = PhotoImage(file="/home/pi/SeaBee-rpi-uploader/unmount_icon.png")
-unmount_button = tk.Button(root, image=unmount_icon, command=unmount_devices, state=tk.DISABLED)
+unmount_button = tk.Button(root, image=unmount_icon, command=unmount_devices, state=tk.NORMAL)
 unmount_button.place(x=435, y=50, width=40, height=40)
 
 check_storage_devices()
