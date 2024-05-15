@@ -54,7 +54,7 @@ File Manager -> edit > preferences > volume management > Uncheck "Show available
     Save and exit the editor (Ctrl + O, Enter, Ctrl + X in nano).
 
 2. **Clone the Repository**
-    Clone the repository to a preferred directory, for example, `/home/pi/SeaBee-rpi-uploader/`.
+    Clone the repository to `/home/pi/SeaBee-rpi-uploader/`.
 
     ```git clone https://github.com/SeaBee-no/SeaBee-rpi-uploader```
 
@@ -82,11 +82,29 @@ File Manager -> edit > preferences > volume management > Uncheck "Show available
     cp /home/pi/SeaBee-rpi-uploader/SeaBeeUploader.desktop /home/pi/.config/autostart/SeaBeeUploader.desktop
     ```
 
-## Start the automatic pulling from GitHub (optional)
-    ```chmod +x /home/pi/SeaBee-rpi-uploader/update_repo.sh```
+## Start Automatic Pulling from GitHub (Optional)
 
-    ```crontab -e```
+To set up your system to automatically pull updates from GitHub, follow these steps:
+
+1. **Make the update script executable:**
+
+    ```sh
+    chmod +x /home/pi/SeaBee-rpi-uploader/update_repo.sh
+    ```
+
+2. **Edit the crontab to schedule the script to run at reboot:**
+
+    ```sh
+    crontab -e
+    ```
+
+3. **Add the following line to the crontab file:**
+
+    ```sh
     @reboot /home/pi/SeaBee-rpi-uploader/update_repo.sh
+    ```
+
+This will ensure that the script runs automatically every time the system reboots, keeping your repository up-to-date.
 
 
 ## Usage
