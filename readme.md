@@ -26,16 +26,32 @@ If you have a 3.5 inch touch screen, setup is as follows:
 File Manager -> edit > preferences > volume management > Uncheck "Show available options for removable media when they are inserted "
 
 ## Configure rclone
-    ```sudo apt install rclone
+
+To configure `rclone`, follow these steps:
+
+1. **Install rclone:**
+
+    ```sh
+    sudo apt install rclone
+    ```
+
+2. **Configure rclone:**
+
+    ```sh
     rclone config
     ```
-        ```name>minio
-        Storage>s3
-        provider>Minio
-        access_key_id>
-        secret_access_key>
-        endpoint>storage.seabee.sigma2.no
-        ```
+
+    When prompted, use the following settings:
+
+    ```
+    name> minio
+    Storage> s3
+    provider> Minio
+    access_key_id> [your-access-key-id]
+    secret_access_key> [your-secret-access-key]
+    endpoint> storage.seabee.sigma2.no
+    ```
+
 
 ## Installation
 1. **Prepare the Environment**
