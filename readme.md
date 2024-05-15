@@ -14,6 +14,14 @@ The SeaBee Raspberry Pi Uploader is a Python-based graphical application designe
 - Tkinter library for Python
 - Access to the Raspberry Pi's terminal and GUI interface.
 
+## Touch screen setup
+    If you have a 3.5 inch touch screen, setup is as follows:
+    ```git clone  https://github.com/goodtft/LCD-show.git
+    chmod -R 755 LCD-show 
+    cd LCD-show/
+    sudo ./LCD35-show 180
+    ```
+
 ## Installation
 1. **Prepare the Environment**
     Ensure that your Raspberry Pi is set up with Python 3.x and the necessary permissions. Open the terminal and edit the `.profile` file:
