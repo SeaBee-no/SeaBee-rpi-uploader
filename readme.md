@@ -20,7 +20,22 @@ If you have a 3.5 inch touch screen, setup is as follows:
     git clone  https://github.com/goodtft/LCD-show.git
     chmod -R 755 LCD-show 
     cd LCD-show/
-    sudo ./LCD35-show 180
+    sudo ./LCD35-show 180 # 180 for rotating the screen
+
+## Change some settings to make it smoother
+File Manager -> edit > preferences > volume management > Uncheck "Show available options for removable media when they are inserted "
+
+## Configure rclone
+    ```sudo apt install rclone
+    rclone config
+    ```
+        ```name>minio
+        Storage>s3
+        provider>Minio
+        access_key_id>
+        secret_access_key>
+        endpoint>storage.seabee.sigma2.no
+        ```
 
 ## Installation
 1. **Prepare the Environment**
@@ -40,6 +55,9 @@ If you have a 3.5 inch touch screen, setup is as follows:
 
 2. **Clone the Repository**
     Clone the repository to a preferred directory, for example, `/home/pi/SeaBee-rpi-uploader/`.
+
+    ```git clone https://github.com/SeaBee-no/SeaBee-rpi-uploader```
+
 
 3. **Set Script Permissions**
     Give execution permissions to the main Python script and the `.desktop` file:
@@ -63,6 +81,13 @@ If you have a 3.5 inch touch screen, setup is as follows:
     mkdir /home/pi/.config/autostart
     cp /home/pi/SeaBee-rpi-uploader/SeaBeeUploader.desktop /home/pi/.config/autostart/SeaBeeUploader.desktop
     ```
+
+## Start the automatic pulling from GitHub (optional)
+    ```chmod +x /home/pi/SeaBee-rpi-uploader/update_repo.sh```
+
+    ```crontab -e```
+    @reboot /home/pi/SeaBee-rpi-uploader/update_repo.sh
+
 
 ## Usage
 - Double-click the `SeaBeeUploader.desktop` shortcut on your Raspberry Pi desktop to start the application.
