@@ -22,8 +22,8 @@ If you have a 3.5 inch touch screen, setup is as follows:
     cd LCD-show/
     sudo ./LCD35-show 180 # 180 for rotating the screen
 
-## Change some settings to make it smoother
-File Manager -> edit > preferences > volume management > Uncheck "Show available options for removable media when they are inserted "
+## Disable popup for newly inserted devices
+File Manager -> Edit > Preferences > Volume Management > Uncheck "Show available options for removable media when they are inserted"
 
 ## Configure rclone
 
